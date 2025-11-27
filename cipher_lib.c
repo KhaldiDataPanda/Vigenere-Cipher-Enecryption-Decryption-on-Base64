@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+
 // Base64 alphabet
 const char BASE64_ALPHABET[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
@@ -16,6 +18,9 @@ int get_base64_index(char c) {
     }
     return -1; // invalid character
 }
+
+
+
 
 // Apply Vigenère cipher to base64-encoded content
 char* vigenere_cipher(const char* input, size_t input_len, const char* key, size_t key_len, size_t* output_len) {
@@ -62,6 +67,9 @@ char* vigenere_cipher(const char* input, size_t input_len, const char* key, size
     return output;
 }
 
+
+
+
 // Reverse Vigenère cipher on base64-encoded content
 char* vigenere_decipher(const char* input, size_t input_len, const char* key, size_t key_len, size_t* output_len) {
     char* output = malloc(input_len + 1);
@@ -107,6 +115,8 @@ char* vigenere_decipher(const char* input, size_t input_len, const char* key, si
     return output;
 }
 
+
+
 // Find the minimal repeating pattern in a string
 size_t find_minimal_period(const char* str, size_t len) {
     for (size_t period = 1; period <= len / 2; period++) {
@@ -123,6 +133,9 @@ size_t find_minimal_period(const char* str, size_t len) {
     }
     return len;
 }
+
+
+
 
 // Find the key used for encryption
 char* find_key(const char* plaintext, size_t plain_len, const char* ciphertext, size_t cipher_len, size_t* key_len) {
@@ -176,4 +189,8 @@ char* find_key(const char* plaintext, size_t plain_len, const char* ciphertext, 
     
     *key_len = minimal_period;
     return key;
+
+
+    /* IMPORTANT NOTE : The key length is a must, without it we cannot be sure of the sequnce of the key
+    */
 }

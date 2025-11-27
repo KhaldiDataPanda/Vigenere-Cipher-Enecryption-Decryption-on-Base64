@@ -13,7 +13,7 @@ CIPHER_SRC = cipher.c
 DECIPHER_SRC = decipher.c
 FINDKEY_SRC = findkey.c
 
-# Library source files (for bonus)
+# Library source files 
 LIB_SRC = cipher_lib.c
 LIB_HDR = cipher_lib.h
 

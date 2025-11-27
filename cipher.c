@@ -3,6 +3,10 @@
 #include <string.h>
 #include "cipher_lib.h"
 
+
+
+
+
 int main(int argc, char* argv[]) {
     if (argc != 3) {
         fprintf(stderr, "Usage: %s <key> <filename>\n", argv[0]);

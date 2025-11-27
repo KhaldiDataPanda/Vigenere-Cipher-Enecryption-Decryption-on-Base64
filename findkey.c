@@ -3,6 +3,8 @@
 #include <string.h>
 #include "cipher_lib.h"
 
+
+
 int main(int argc, char* argv[]) {
     if (argc != 3) {
         fprintf(stderr, "Usage: %s <plaintext_file> <encrypted_file>\n", argv[0]);
