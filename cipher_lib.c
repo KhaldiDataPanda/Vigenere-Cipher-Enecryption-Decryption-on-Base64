@@ -49,11 +49,13 @@ char* vigenere_cipher(const char* input, size_t input_len, const char* key, size
                 attempts++;
             }
         }
-        
         if (key_index == -1) {
             free(output);
             return NULL; // no valid key characters
         }
+
+
+
         
         // Apply Vigenère cipher
         int encrypted_index = (char_index + key_index) % 64;
@@ -66,6 +68,7 @@ char* vigenere_cipher(const char* input, size_t input_len, const char* key, size
     *output_len = out_pos;
     return output;
 }
+
 
 
 
@@ -87,6 +90,8 @@ char* vigenere_decipher(const char* input, size_t input_len, const char* key, si
             continue;
         }
         
+
+
         // Find next valid key character (skip padding), cycling through key
         int key_index = -1;
         size_t attempts = 0;
@@ -97,11 +102,12 @@ char* vigenere_decipher(const char* input, size_t input_len, const char* key, si
                 attempts++;
             }
         }
-        
         if (key_index == -1) {
             free(output);
             return NULL; // no valid key characters
         }
+
+
         
         // Apply reverse Vigenère cipher
         int decrypted_index = (char_index - key_index + 64) % 64;
@@ -117,19 +123,27 @@ char* vigenere_decipher(const char* input, size_t input_len, const char* key, si
 
 
 
+
+
+
+
 // Find the minimal repeating pattern in a string
 size_t find_minimal_period(const char* str, size_t len) {
+
     for (size_t period = 1; period <= len / 2; period++) {
         int is_period = 1;
+
         for (size_t i = period; i < len; i++) {
             if (str[i] != str[i % period]) {
                 is_period = 0;
                 break;
             }
         }
+
         if (is_period) {
             return period;
         }
+        
     }
     return len;
 }
@@ -137,10 +151,17 @@ size_t find_minimal_period(const char* str, size_t len) {
 
 
 
+
+
+
+
+
 // Find the key used for encryption
 char* find_key(const char* plaintext, size_t plain_len, const char* ciphertext, size_t cipher_len, size_t* key_len) {
     // Key length is determined by the number of non-padding characters
+
     size_t max_len = (plain_len < cipher_len) ? plain_len : cipher_len;
+
     char* full_key = malloc(max_len + 1);
     if (!full_key) return NULL;
     
@@ -148,6 +169,8 @@ char* find_key(const char* plaintext, size_t plain_len, const char* ciphertext, 
     size_t plain_pos = 0;
     size_t cipher_pos = 0;
     
+
+
     // Extract key by comparing plaintext and ciphertext
     while (plain_pos < plain_len && cipher_pos < cipher_len) {
         int plain_index = get_base64_index(plaintext[plain_pos]);
@@ -156,13 +179,13 @@ char* find_key(const char* plaintext, size_t plain_len, const char* ciphertext, 
         // Skip padding characters
         if (plain_index == -1) {
             plain_pos++;
-            continue;
-        }
+            continue;}
+
         if (cipher_index == -1) {
             cipher_pos++;
-            continue;
-        }
-        
+            continue; }
+
+
         // Calculate key character: K = (C - P + 64) mod 64
         int key_index = (cipher_index - plain_index + 64) % 64;
         full_key[key_pos++] = BASE64_ALPHABET[key_index];
@@ -171,6 +194,8 @@ char* find_key(const char* plaintext, size_t plain_len, const char* ciphertext, 
         cipher_pos++;
     }
     
+
+
     full_key[key_pos] = '\0';
     
     // Find minimal repeating pattern
@@ -182,7 +207,8 @@ char* find_key(const char* plaintext, size_t plain_len, const char* ciphertext, 
         free(full_key);
         return NULL;
     }
-    
+
+
     strncpy(key, full_key, minimal_period);
     key[minimal_period] = '\0';
     free(full_key);
@@ -191,6 +217,5 @@ char* find_key(const char* plaintext, size_t plain_len, const char* ciphertext, 
     return key;
 
 
-    /* IMPORTANT NOTE : The key length is a must, without it we cannot be sure of the sequnce of the key
-    */
+
 }
