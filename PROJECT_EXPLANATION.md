@@ -4,11 +4,40 @@ This document provides a comprehensive explanation of the Vigenère Cipher proje
 
 ## 1. Project Overview
 
-The goal of this project is to implement a **Vigenère Cipher** that operates on **Base64-encoded** files.
-The project includes:
--   **Encryption**: Transforming plaintext into ciphertext using a key.
--   **Decryption**: Reversing the process to recover the original text.
--   **Cryptanalysis**: Recovering the key when both plaintext and ciphertext are known (Known-Plaintext Attack).
+This project simulates a cybersecurity scenario where we must develop tools to handle a specific encryption method and analyze compromised system files.
+
+### 1.1 The Scenario
+
+**Part 1: Cryptographic Analysis (C Language)**
+Our team has identified a custom encryption scheme used in a recent attack. To recover the files, we need to reverse the process. The encryption follows this specific sequence:
+1.  **Base64 Encoding**: The original file is encoded into Base64.
+2.  **Vigenère Cipher**: The Base64 content is encrypted using a Vigenère cipher. Crucially, padding characters (`=`) are skipped during this process.
+3.  **Base64 Decoding**: The encrypted Base64 string is decoded back to binary (conceptually, though our tools mostly work on the Base64 layer).
+
+We need to build a suite of C programs to replicate this encryption, perform decryption, and recover keys from known plaintext/ciphertext pairs.
+
+**Part 2: Forensic Investigation (Bash Scripting)**
+Following the attack, we receive compressed archives (`.gz`) containing system files from compromised machines. These archives contain:
+-   Authentication logs (`auth.log`).
+-   User data files.
+
+We need to build a **Bash Toolbox** to:
+1.  **Manage Evidence**: Organize and track these archives in a structured workspace (`.sh-toolbox`).
+2.  **Analyze Traces**: Parse logs to find when the attacker (`admin` user) logged in, and identify which files were modified after that timestamp.
+
+### 1.2 Project Components
+
+The project is divided into two main technical areas:
+
+-   **C Part (Cryptography)**:
+    -   **Encryption (`cipher`)**: Transforming plaintext into ciphertext using a key.
+    -   **Decryption (`decipher`)**: Reversing the process to recover the original text.
+    -   **Cryptanalysis (`findkey`)**: Recovering the key when both plaintext and ciphertext are known (Known-Plaintext Attack).
+
+-   **Bash Part (Forensics)**:
+    -   **Toolbox Management**: Initializing (`init-toolbox.sh`) and maintaining a workspace.
+    -   **Archive Handling**: Importing (`import-archive.sh`) and listing (`ls-toolbox.sh`) compressed archives.
+    -   **Forensics**: Analyzing archives (`check-archive.sh`) to identify attack timestamps and impacted files.
 
 ### Project Files
 | File | Description |
@@ -18,7 +47,10 @@ The project includes:
 | `decipher.c` | Main program for decryption |
 | `findkey.c` | Main program for key recovery |
 | `Makefile` | Build automation script |
-| `verify.ps1` | PowerShell verification script |
+| `init-toolbox.sh` | Initializes the workspace environment |
+| `import-archive.sh` | Imports archives into the toolbox |
+| `ls-toolbox.sh` | Lists available archives |
+| `check-archive.sh` | Analyzes an archive for attack details |
 
 ---
 
@@ -669,154 +701,122 @@ rebuild: clean all
 
 ---
 
-## 7. The Verification Script: `verify.ps1`
+## 7. The Bash Toolbox
 
-This PowerShell script tests the entire encryption/decryption pipeline to verify that everything works correctly.
+The project includes a set of Bash scripts to manage a workspace for analyzing encrypted archives. These scripts automate the process of importing, listing, and inspecting archives.
 
-### PowerShell Syntax Overview
+### 7.1 Initialization: `init-toolbox.sh`
 
-PowerShell is a command-line shell and scripting language for Windows. Here's an explanation of the syntax used:
+#### Goal
+Initializes the `.sh-toolbox` directory and the `archives` tracking file. This script ensures the environment is ready for use.
 
-### Script Configuration
-
-```powershell
-$ErrorActionPreference = "Stop"
-```
--   **`$ErrorActionPreference`**: A built-in PowerShell preference variable.
--   **`"Stop"`**: Makes the script stop immediately if any error occurs (like `set -e` in Bash).
-
-### Creating Test Data
-
-```powershell
-# Create secret file
-"Hello World" | Set-Content -NoNewline secret.txt
-```
--   **`"Hello World"`**: A string literal.
--   **`|`**: The pipe operator - passes output from one command to another.
--   **`Set-Content`**: Writes content to a file.
--   **`-NoNewline`**: Don't add a newline at the end of the file.
--   **`secret.txt`**: The output filename.
-
-### Base64 Encoding
-
-```powershell
-# Encode to Base64
-$bytes = [System.IO.File]::ReadAllBytes("$PWD/secret.txt")
-$b64 = [Convert]::ToBase64String($bytes)
-$b64 | Set-Content -NoNewline secret.b64
-```
--   **`$bytes`**: Variable to store the file content as bytes.
--   **`[System.IO.File]::ReadAllBytes(...)`**: .NET method call to read file as byte array.
-    -   `[System.IO.File]`: The .NET File class.
-    -   `::`: Static method call operator.
-    -   `ReadAllBytes()`: Method that reads entire file as bytes.
--   **`$PWD`**: Current working directory (like `pwd` in Unix).
--   **`[Convert]::ToBase64String($bytes)`**: Converts bytes to Base64 string.
--   **`$b64`**: Variable storing the Base64-encoded content.
-
-### File Operations
-
-```powershell
-# Copy for later comparison
-Copy-Item secret.b64 secret.b64.orig
-```
--   **`Copy-Item`**: Copies a file (like `cp` in Unix).
--   Creates a backup of the original Base64 file for later comparison.
-
-### Running the Programs
-
-```powershell
-# Encrypt (operates on Base64 string, outputs Base64 string)
-Write-Host "Encrypting..."
-./cipher MYKEY secret.b64
-```
--   **`Write-Host`**: Prints a message to the console.
--   **`./cipher`**: Runs the `cipher` executable in the current directory.
--   **`MYKEY`**: The encryption key (passed as first argument).
--   **`secret.b64`**: The file to encrypt (passed as second argument).
-
-```powershell
-# Check if file changed
-$cipherContent = Get-Content secret.b64
-if ($cipherContent.Length -eq 0) { Write-Error "Cipher output is empty" }
-```
--   **`Get-Content`**: Reads file content (like `cat` in Unix).
--   **`$cipherContent.Length`**: Length of the content.
--   **`-eq`**: Equality comparison operator (equals).
--   **`Write-Error`**: Writes an error message and (with `$ErrorActionPreference = "Stop"`) stops execution.
-
-```powershell
-# Copy encrypted file for decryption
-Copy-Item secret.b64 secret.cipher.b64
-```
--   Saves a copy of the encrypted file.
-
-```powershell
-# Find Key
-Write-Host "Finding Key..."
-$keyOutput = ./findkey secret.b64.orig secret.b64
-Write-Host "Key Found: $keyOutput"
-```
--   **`$keyOutput = ./findkey ...`**: Runs findkey and captures its stdout output.
--   **`"Key Found: $keyOutput"`**: String interpolation - the variable value is inserted into the string.
-
-```powershell
-# Decrypt
-Write-Host "Decrypting..."
-./decipher MYKEY secret.cipher.b64
-```
--   Decrypts the encrypted file using the same key.
-
-### Verification
-
-```powershell
-# Compare
-$decryptedB64 = Get-Content secret.cipher.b64
-$originalB64 = Get-Content secret.b64.orig
-
-if ($decryptedB64 -eq $originalB64) {
-    Write-Host "SUCCESS: Decryption matches original." -ForegroundColor Green
-} else {
-    Write-Host "FAILURE: Decryption does not match." -ForegroundColor Red
-    Write-Host "Original: $originalB64"
-    Write-Host "Decrypted: $decryptedB64"
-    exit 1
-}
-```
--   **`if (...) { ... } else { ... }`**: Conditional statement.
--   **`-ForegroundColor Green`**: Sets the text color for console output.
--   **`exit 1`**: Exits the script with error code 1 (indicates failure).
-
-### How to Run
-
-```powershell
-.\verify.ps1
+#### Usage
+```bash
+./init-toolbox.sh
 ```
 
-### Expected Output (Success)
+#### Code Explanation
+The script performs the following checks and actions:
+1.  **Directory Creation**: Checks if `.sh-toolbox` exists. If not, it creates it.
+2.  **Foreign File Check**: Ensures the directory contains only the `archives` file. If other files exist, it exits with error code 12.
+3.  **Archives File Creation**: Checks if `archives` file exists. If not, it creates it with an initial count of `0`.
+
+**Return Codes:**
+-   `10`: Success (directory/file created or already existed correctly).
+-   `11`: Creation failed.
+-   `12`: Directory contains unauthorized files.
+
+### 7.2 Archive Import: `import-archive.sh`
+
+#### Goal
+Imports a `.gz` archive into the `.sh-toolbox` directory and updates the tracking file.
+
+#### Usage
+```bash
+./import-archive.sh [-f] <archive_path> [archive_path2 ...]
 ```
-Encrypting...
-Finding Key...
-Key Found: MYKEY
-Decrypting...
-SUCCESS: Decryption matches original.
+-   `-f`: Force overwrite if the archive already exists in the toolbox.
+
+#### Code Explanation
+1.  **Argument Parsing**: Handles the `-f` flag and collects archive paths.
+2.  **Existence Check**: Verifies that the source archive exists.
+3.  **Overwrite Protection**: If the file exists in the toolbox, it asks for confirmation unless `-f` is used.
+4.  **Copy**: Copies the file to `.sh-toolbox`.
+5.  **Tracking Update**: Updates `.sh-toolbox/archives` by appending the filename.
+
+**Return Codes:**
+-   `0`: Success (or cancelled by user).
+-   `1`: Toolbox directory missing.
+-   `2`: Source archive missing or no arguments.
+-   `3`: Copy failed.
+-   `4`: Archives file missing.
+
+### 7.3 Listing Archives: `ls-toolbox.sh`
+
+#### Goal
+Lists all archives currently tracked in the toolbox, displaying their status.
+
+#### Usage
+```bash
+./ls-toolbox.sh
 ```
+
+#### Code Explanation
+1.  **Environment Check**: Verifies `.sh-toolbox` and `archives` file exist.
+2.  **Parsing**: Reads `archives` file line by line.
+3.  **Display**: Prints the filename, import date, and key status (known/unknown).
+4.  **Consistency Check (Bonus)**:
+    -   Warns if a tracked archive is missing from the directory.
+    -   Warns if an untracked archive exists in the directory.
+
+**Return Codes:**
+-   `0`: Success.
+-   `1`: Toolbox directory missing.
+-   `2`: Archives file missing.
+-   `3`: Inconsistency detected (missing or untracked files).
+
+### 7.4 Archive Analysis: `check-archive.sh`
+
+#### Goal
+Analyzes a specific archive to identify the time of attack and which files were modified.
+
+#### Usage
+```bash
+./check-archive.sh
+```
+
+#### Code Explanation
+1.  **Selection**: Lists available archives and prompts the user to select one.
+2.  **Decompression**: Extracts the selected archive to a temporary directory.
+3.  **Log Analysis**:
+    -   Parses `var/log/auth.log`.
+    -   Finds the last successful login of the user `admin`.
+    -   Extracts the timestamp of this event (the "attack time").
+4.  **File Forensics**:
+    -   Scans the `data/` directory.
+    -   Identifies files modified *after* the attack timestamp.
+    -   (Bonus) Identifies potential original files (same name/size, not modified).
+
+**Return Codes:**
+-   `0`: Success.
+-   `1`: Toolbox directory missing.
+-   `2`: Archives file missing.
+-   `3`: Archive missing or decompression failed.
+-   `4`: Log file missing or admin login not found.
+-   `5`: Data directory missing or empty.
 
 ---
 
 ## 8. Program Usage Summary
 
-### Compilation
-```bash
-make all
-```
+### C Programs (Encryption/Decryption)
+1.  **Compile**: `make all`
+2.  **Encrypt**: `./cipher <key> <file>`
+3.  **Decrypt**: `./decipher <key> <file>`
+4.  **Find Key**: `./findkey <plaintext_file> <encrypted_file>`
 
-### Execution
-1.  **Encrypt**: `./cipher <key> <file>`
-2.  **Decrypt**: `./decipher <key> <file>`
-3.  **Find Key**: `./findkey <plaintext_file> <encrypted_file>`
-
-### Verification
-```powershell
-.\verify.ps1
-```
+### Bash Scripts (Toolbox & Forensics)
+1.  **Initialize**: `./init-toolbox.sh`
+2.  **Import**: `./import-archive.sh <archive.gz>`
+3.  **List**: `./ls-toolbox.sh`
+4.  **Analyze**: `./check-archive.sh`
