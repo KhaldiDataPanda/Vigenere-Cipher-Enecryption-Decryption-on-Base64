@@ -111,3 +111,66 @@ The Vigenère cipher uses the base64 alphabet (A-Z, a-z, 0-9, +, /) as a 64-char
 - Decryption: `P[i] = (C[i] - K[i mod keylen] + 64) mod 64`
 
 The `findkey` program extracts the minimal repeating key pattern from the full key sequence.
+
+## Testing Workflow
+
+You can verify the correctness of the C programs using the following workflow:
+
+```bash
+# 1. Create a test file
+echo "Hello World" > test.txt
+
+# 2. Encode it to Base64
+base64 test.txt > test.b64
+
+# 3. Encrypt it (this modifies test.b64)
+./cipher MYKEY test.b64
+
+# 4. Try to find the key (Known Plaintext Attack)
+# Note: You need the original Base64 for this. 
+# In a real scenario, you'd have a backup or a known header.
+# For this test, let's assume we have the original:
+echo "Hello World" | base64 > original.b64
+./findkey original.b64 test.b64
+# Output should be: MYKEY
+
+# 5. Decrypt it (this modifies test.b64 back)
+./decipher MYKEY test.b64
+
+# 6. Verify the result
+# Note: diff -w ignores whitespace differences (like trailing newlines)
+diff -w original.b64 test.b64
+# If no output, the files match!
+
+# 7. Decode back to text
+base64 -d test.b64
+# Output should be: Hello World
+```
+
+## Bash Toolbox Usage
+
+The project includes a set of Bash scripts for forensic analysis.
+
+### 1. Initialize the Toolbox
+Sets up the `.sh-toolbox` directory to track archives.
+```bash
+./init-toolbox.sh
+```
+
+### 2. Import Archives
+Imports `.gz` archives into the toolbox.
+```bash
+./import-archive.sh /path/to/archive.tar.gz
+```
+
+### 3. List Archives
+Lists all tracked archives and their status.
+```bash
+./ls-toolbox.sh
+```
+
+### 4. Analyze an Archive
+Analyzes a specific archive to find the attack timestamp and modified files.
+```bash
+./check-archive.sh
+```
