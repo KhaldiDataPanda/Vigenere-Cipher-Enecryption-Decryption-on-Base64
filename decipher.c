@@ -18,14 +18,13 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     
-    // Read file content
+    // Read file content (Binary)
     FILE* file = fopen(filename, "rb");
     if (!file) {
         fprintf(stderr, "Error: Cannot open file %s\n", filename);
         return 1;
     }
     
-    // Get file size
     fseek(file, 0, SEEK_END);
     long file_size = ftell(file);
     if (file_size < 0) {
@@ -35,8 +34,7 @@ int main(int argc, char* argv[]) {
     }
     fseek(file, 0, SEEK_SET);
     
-    // Read content
-    char* content = malloc(file_size + 1);
+    unsigned char* content = malloc(file_size);
     if (!content) {
         fprintf(stderr, "Error: Memory allocation failed\n");
         fclose(file);
@@ -44,30 +42,39 @@ int main(int argc, char* argv[]) {
     }
     
     size_t read_size = fread(content, 1, file_size, file);
-    content[read_size] = '\0';
     fclose(file);
     
-    // Apply decipher
-    size_t output_len;
-    char* decrypted = vigenere_decipher(content, read_size, key, key_len, &output_len);
+    // 1. Convert binary bytes back into a Base64 string
+    size_t base64_len;
+    char* base64_output = base64_encode(content, read_size, &base64_len);
     free(content);
     
-    if (!decrypted) {
+    if (!base64_output) {
+        fprintf(stderr, "Error: Base64 encoding failed\n");
+        return 1;
+    }
+    
+    // 2. Perform Vigenère subtraction (Base64 -> Base64)
+    size_t decrypted_len;
+    char* decrypted_output = vigenere_decipher(base64_output, base64_len, key, key_len, &decrypted_len);
+    free(base64_output);
+    
+    if (!decrypted_output) {
         fprintf(stderr, "Error: Decryption failed\n");
         return 1;
     }
     
-    // Write decrypted content back to file
+    // 3. Overwrite the input file with the resulting Base64 string
     file = fopen(filename, "wb");
     if (!file) {
         fprintf(stderr, "Error: Cannot write to file %s\n", filename);
-        free(decrypted);
+        free(decrypted_output);
         return 1;
     }
     
-    fwrite(decrypted, 1, output_len, file);
+    fwrite(decrypted_output, 1, decrypted_len, file);
     fclose(file);
-    free(decrypted);
+    free(decrypted_output);
     
     return 0;
 }

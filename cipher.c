@@ -3,10 +3,6 @@
 #include <string.h>
 #include "cipher_lib.h"
 
-
-
-
-
 int main(int argc, char* argv[]) {
     if (argc != 3) {
         fprintf(stderr, "Usage: %s <key> <filename>\n", argv[0]);
@@ -22,14 +18,13 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     
-    // Read file content
+    // Read file content (Base64 text)
     FILE* file = fopen(filename, "rb");
     if (!file) {
         fprintf(stderr, "Error: Cannot open file %s\n", filename);
         return 1;
     }
     
-    // Get file size
     fseek(file, 0, SEEK_END);
     long file_size = ftell(file);
     if (file_size < 0) {
@@ -39,7 +34,6 @@ int main(int argc, char* argv[]) {
     }
     fseek(file, 0, SEEK_SET);
     
-    // Read content
     char* content = malloc(file_size + 1);
     if (!content) {
         fprintf(stderr, "Error: Memory allocation failed\n");
@@ -51,27 +45,37 @@ int main(int argc, char* argv[]) {
     content[read_size] = '\0';
     fclose(file);
     
-    // Apply cipher
-    size_t output_len;
-    char* encrypted = vigenere_cipher(content, read_size, key, key_len, &output_len);
+    // 1. Apply Vigenère cipher (Base64 -> Base64)
+    size_t vigenere_len;
+    char* vigenere_output = vigenere_cipher(content, read_size, key, key_len, &vigenere_len);
     free(content);
     
-    if (!encrypted) {
+    if (!vigenere_output) {
         fprintf(stderr, "Error: Encryption failed\n");
         return 1;
     }
     
-    // Write encrypted content back to file
-    file = fopen(filename, "wb");
-    if (!file) {
-        fprintf(stderr, "Error: Cannot write to file %s\n", filename);
-        free(encrypted);
+    // 2. Decode from Base64 to raw binary bytes
+    size_t binary_len;
+    unsigned char* binary_output = base64_decode(vigenere_output, vigenere_len, &binary_len);
+    free(vigenere_output);
+    
+    if (!binary_output) {
+        fprintf(stderr, "Error: Base64 decoding failed\n");
         return 1;
     }
     
-    fwrite(encrypted, 1, output_len, file);
+    // 3. Overwrite the original file with raw bytes
+    file = fopen(filename, "wb");
+    if (!file) {
+        fprintf(stderr, "Error: Cannot write to file %s\n", filename);
+        free(binary_output);
+        return 1;
+    }
+    
+    fwrite(binary_output, 1, binary_len, file);
     fclose(file);
-    free(encrypted);
+    free(binary_output);
     
     return 0;
 }

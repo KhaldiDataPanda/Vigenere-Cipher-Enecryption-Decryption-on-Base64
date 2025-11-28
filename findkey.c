@@ -3,79 +3,73 @@
 #include <string.h>
 #include "cipher_lib.h"
 
-
-
 int main(int argc, char* argv[]) {
     if (argc != 3) {
-        fprintf(stderr, "Usage: %s <plaintext_file> <encrypted_file>\n", argv[0]);
+        fprintf(stderr, "Usage: %s <clear_file> <encrypted_file>\n", argv[0]);
         return 1;
     }
     
-    const char* plaintext_file = argv[1];
+    const char* clear_file = argv[1];
     const char* encrypted_file = argv[2];
     
-    // Read plaintext file
-    FILE* file = fopen(plaintext_file, "rb");
+    // Read Clear file (Base64)
+    FILE* file = fopen(clear_file, "rb");
     if (!file) {
-        fprintf(stderr, "Error: Cannot open file %s\n", plaintext_file);
+        fprintf(stderr, "Error: Cannot open file %s\n", clear_file);
         return 1;
     }
     
     fseek(file, 0, SEEK_END);
-    long plain_size = ftell(file);
-    if (plain_size < 0) {
-        fprintf(stderr, "Error: Cannot determine file size\n");
-        fclose(file);
-        return 1;
-    }
+    long clear_size = ftell(file);
     fseek(file, 0, SEEK_SET);
     
-    char* plaintext = malloc(plain_size + 1);
-    if (!plaintext) {
-        fprintf(stderr, "Error: Memory allocation failed\n");
+    char* clear_text = malloc(clear_size + 1);
+    if (!clear_text) {
         fclose(file);
         return 1;
     }
-    
-    size_t plain_len = fread(plaintext, 1, plain_size, file);
-    plaintext[plain_len] = '\0';
+    size_t clear_len = fread(clear_text, 1, clear_size, file);
+    clear_text[clear_len] = '\0';
     fclose(file);
     
-    // Read encrypted file
+    // Read Encrypted file (Binary)
     file = fopen(encrypted_file, "rb");
     if (!file) {
         fprintf(stderr, "Error: Cannot open file %s\n", encrypted_file);
-        free(plaintext);
+        free(clear_text);
         return 1;
     }
     
     fseek(file, 0, SEEK_END);
-    long cipher_size = ftell(file);
-    if (cipher_size < 0) {
-        fprintf(stderr, "Error: Cannot determine file size\n");
-        fclose(file);
-        free(plaintext);
-        return 1;
-    }
+    long enc_size = ftell(file);
     fseek(file, 0, SEEK_SET);
     
-    char* ciphertext = malloc(cipher_size + 1);
-    if (!ciphertext) {
-        fprintf(stderr, "Error: Memory allocation failed\n");
+    unsigned char* enc_bytes = malloc(enc_size);
+    if (!enc_bytes) {
         fclose(file);
-        free(plaintext);
+        free(clear_text);
         return 1;
     }
-    
-    size_t cipher_len = fread(ciphertext, 1, cipher_size, file);
-    ciphertext[cipher_len] = '\0';
+    size_t enc_len = fread(enc_bytes, 1, enc_size, file);
     fclose(file);
+    
+    // Convert Encrypted file (Binary) back to Base64
+    size_t enc_base64_len;
+    char* enc_base64 = base64_encode(enc_bytes, enc_len, &enc_base64_len);
+    free(enc_bytes);
+    
+    if (!enc_base64) {
+        fprintf(stderr, "Error: Base64 encoding failed\n");
+        free(clear_text);
+        return 1;
+    }
     
     // Find the key
     size_t key_len;
-    char* key = find_key(plaintext, plain_len, ciphertext, cipher_len, &key_len);
-    free(plaintext);
-    free(ciphertext);
+    char* key = find_key(clear_text, clear_len, enc_base64, enc_base64_len, &key_len);
+    
+    free(clear_text);
+    free(enc_base64);
     
     if (!key) {
         fprintf(stderr, "Error: Key finding failed\n");
