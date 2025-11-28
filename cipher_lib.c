@@ -176,7 +176,7 @@ char* base64_encode(const unsigned char* data, size_t input_length, size_t* outp
         encoded_data[j++] = BASE64_ALPHABET[(triple >> 0 * 6) & 0x3F];
     }
 
-    for (int i = 0; i < (3 - input_length % 3) % 3; i++)
+    for (size_t i = 0; i < (3 - input_length % 3) % 3; i++)
         encoded_data[encoded_length - 1 - i] = '=';
 
     encoded_data[encoded_length] = '\0';
