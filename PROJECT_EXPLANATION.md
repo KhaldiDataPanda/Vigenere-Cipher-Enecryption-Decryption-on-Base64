@@ -133,8 +133,9 @@ char* vigenere_cipher(const char* input, size_t input_len, const char* key, size
         // Find next valid key character (skip padding), cycling through key
         int key_index = -1;
         size_t attempts = 0;
-        while (key_index == -1 && attempts < key_len) {
-            key_index = get_base64_index(key[key_pos % key_len]);
+        while (key_index == -1 && attempts < key_len * 2) {
+            char key_char = key[key_pos % key_len];
+            key_index = get_base64_index(key_char);
             if (key_index == -1) {
                 key_pos++;
                 attempts++;
@@ -192,8 +193,9 @@ char* vigenere_decipher(const char* input, size_t input_len, const char* key, si
         // Find next valid key character (skip padding), cycling through key
         int key_index = -1;
         size_t attempts = 0;
-        while (key_index == -1 && attempts < key_len) {
-            key_index = get_base64_index(key[key_pos % key_len]);
+        while (key_index == -1 && attempts < key_len * 2) {
+            char key_char = key[key_pos % key_len];
+            key_index = get_base64_index(key_char);
             if (key_index == -1) {
                 key_pos++;
                 attempts++;
